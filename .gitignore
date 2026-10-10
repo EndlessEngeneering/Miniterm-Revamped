@@ -1,0 +1,15 @@
+# macOS system files
+.DS_Store
+
+# Temporary runtime capture files
+/tmp/*
+*.tmp
+
+# Local logs
+*.log
+
+
+# Ignore all temporary runtime menu communication files
+tmp.*
+/tmp/*
+*.tmp
