@@ -29,12 +29,18 @@ if errorlevel 1 (
 )
 
 echo [check] Checking tty-prompt...
-gem list -i tty-prompt >nul 2>&1
+echo [check] Testing Ruby dependency load...
+ruby -e "require 'tty-prompt'" >nul 2>&1
 if errorlevel 1 (
     echo Installing the tty-prompt gem...
     gem install tty-prompt --no-document
     if errorlevel 1 (
         echo Failed to install tty-prompt. Check your internet connection and RubyGems setup.
+        goto :error
+    )
+    ruby -e "require 'tty-prompt'" >nul 2>&1
+    if errorlevel 1 (
+        echo The tty-prompt gem installed but Ruby still cannot load it.
         goto :error
     )
 )
