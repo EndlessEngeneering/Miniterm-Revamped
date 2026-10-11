@@ -13,3 +13,8 @@
 tmp.*
 /tmp/*
 *.tmp
+
+# Ignore all temporary runtime menu communication files
+tmp.*
+/tmp/*
+*.tmp
