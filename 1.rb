@@ -3,30 +3,28 @@ require 'tty-prompt'
 
 prompt = TTY::Prompt.new(
   input: File.open('/dev/tty', 'r'),
-  output: File.open('/dev/tty', 'w')
+  output: File.open('/dev/tty', 'w'),
+  active_color: :cyan,
+  symbols: { marker: '❯' }
 )
 
-loop do
+if ENV['MENU_LEVEL'] == 'network'
   choices = {
-    'check LCL/ONL ip addr' => 'check_ip',
-    'disk check'    => 'SYS_DISK',
-    'ram check'      => 'SYS_MEM',
-    '❌ Exit Menu'  => 'exit_menu' # Added to break the main loop cleanly
+    'Local IP address' => 'LCL',
+    'Public IP address' => 'ONL',
+    'Back to main menu' => 'sub_back'
   }
 
-  selected = prompt.select('Choose an option:', choices)
+  selected = prompt.select('NETWORK  ·  Choose an address', choices, cycle: true)
+else
+  choices = {
+    'Network details' => 'check_ip',
+    'Disk usage' => 'SYS_DISK',
+    'Memory usage' => 'SYS_MEM',
+    'Exit' => 'exit_menu'
+  }
 
-  if selected == 'check_ip'
-    ipchoices = {
-      'local'             => 'LCL',
-      'online'            => 'ONL',
-      '↩️ <- Back to Main' => 'sub_back' # Handled by Bash case to just refresh
-    }
-    
-    selected = prompt.select('ip settings', ipchoices)
-  end
-
-  puts selected
-  break
+  selected = prompt.select('MAIN MENU  ·  Choose an action', choices, cycle: true)
 end
 
+puts selected

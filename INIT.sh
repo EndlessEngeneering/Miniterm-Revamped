@@ -8,6 +8,27 @@ BLUE=$'\033[34m'
 CYAN=$'\033[36m'
 RESET=$'\033[0m'
 
+print_banner() {
+    local title="Miniterm Revamped"
+    local title_padding=$((44 - ${#title}))
+
+    printf '%s╭──────────────────────────────────────────────╮%s\n' "$CYAN" "$RESET"
+    printf '%s│%s %s%s%s%*s %s│%s\n' \
+        "$CYAN" "$RESET" "$BOLD" "$title" "$RESET" "$title_padding" '' "$CYAN" "$RESET"
+    printf '%s│%s %-44s %s│%s\n' \
+        "$CYAN" "$RESET" "System utilities - version $VER" "$CYAN" "$RESET"
+    printf '%s╰──────────────────────────────────────────────╯%s\n\n' "$CYAN" "$RESET"
+}
+
+print_section() {
+    printf '\n%s── %s ──%s\n\n' "$BLUE" "$1" "$RESET"
+}
+
+pause() {
+    printf '\n%sPress Enter to return to the menu...%s' "$BOLD" "$RESET"
+    read -r
+}
+
 get_local_ip() {
     for iface in en0 en1 eth0 wlan0 bridge0; do
         local ip
@@ -22,27 +43,34 @@ get_local_ip() {
 }
 
 main() {
+    menu_level="main"
+
     # Start the continuous runtime loop
     while true; do
-        printf '%s%sMiniterm revamped ver %s%s\n' "$BOLD" "$CYAN" "$VER" "$RESET"
+        print_banner
         TMP_FILE=$(mktemp)
 
         # Run the Ruby nested menu framework
-        PATH="/opt/homebrew/opt/ruby/bin:$PATH" USER_NAME=$(whoami) ./1.rb > "$TMP_FILE"
+        PATH="/opt/homebrew/opt/ruby/bin:$PATH" USER_NAME=$(whoami) MENU_LEVEL="$menu_level" ./1.rb > "$TMP_FILE"
 
         method1=$(tr -d '\r' < "$TMP_FILE")
         rm -f "$TMP_FILE"
 
         case "$method1" in
+            "check_ip")
+                menu_level="network"
+                ;;
+
             "SYS_DISK")
-                echo -e "\e[1;34m📂 Storage Usage Profiles:\e[0m"
+                menu_level="main"
+                print_section "DISK USAGE"
                 df -h | grep -E '^/dev/'
-                echo "-----------------------------------"
-                echo "Press Enter to continue..." && read -r
+                pause
                 ;;
 
             "SYS_MEM")
-                printf "\e[1;34m🧠 Active Memory Allocation:\e[0m\n"
+                menu_level="main"
+                print_section "MEMORY USAGE"
 
                 if command -v sysctl >/dev/null 2>&1; then
                     sysctl hw.memsize 2>/dev/null | awk '{print "Total Hardware Memory: " $2 / 1024 / 1024 / 1024 " GB"}'
@@ -57,31 +85,33 @@ main() {
                     /Pages wired down/ {printf "Wired Memory: %.2f MB\n", $4 * 4096 / 1024 / 1024}
                 '
 
-                echo "-----------------------------------"
-                echo "Press Enter to continue..." && read -r
+                pause
                 ;;
 
             "LCL")
-                echo "Fetching network details..."
+                menu_level="network"
+                print_section "LOCAL NETWORK"
                 LOCAL_IP=$(get_local_ip)
-                echo "Your local IP address is: ${LOCAL_IP:-unknown}"
-                echo "Press Enter to continue..." && read -r
+                printf '%sLocal IP:%s %s\n' "$BOLD" "$RESET" "${LOCAL_IP:-unknown}"
+                pause
                 ;;
 
             "ONL")
-                echo "Fetching online network details..."
+                menu_level="network"
+                print_section "PUBLIC NETWORK"
                 ONLINE_IP=$(curl -fsSL icanhazip.com)
-                echo "Your online IP address is: ${ONLINE_IP:-unknown}"
-                echo "Press Enter to continue..." && read -r
+                printf '%sPublic IP:%s %s\n' "$BOLD" "$RESET" "${ONLINE_IP:-unknown}"
+                pause
                 ;;
             "sub_back")
-                # Nested IP menu requested to return to the main menu.
+                menu_level="main"
                 ;;
             "exit_menu")
-                echo "Exiting cleanly. Goodbye!"
+                printf '\n%sGoodbye!%s\n' "$CYAN" "$RESET"
                 exit 0
                 ;;
             *)
+                menu_level="main"
                 # If they hit Ctrl+C or something went wrong, clean up and stay in menu.
                 ;;
         esac
@@ -91,34 +121,38 @@ main() {
 }
 
 init() {
-    printf "\e[1mInitialising Miniterm Revamped...\e[0m\n"
+    printf '%sInitialising Miniterm Revamped%s\n\n' "$BOLD" "$RESET"
 
-    bar_width=24
+    bar_width=30
     for ((i=0; i<=bar_width; i++)); do
         filled=$((i * 100 / bar_width))
-        printf '\r['
-        printf '\033[32m'
+        printf '\r  %s[%s' "$BLUE" "$RESET"
+        printf '%s' "$GREEN"
         for ((j=0; j<i; j++)); do
-            printf '#'
+            printf '='
         done
-        printf '\033[0m'
+        if (( i < bar_width )); then
+            printf '>'
+        fi
+        printf '%s' "$RESET"
         for ((j=i; j<bar_width; j++)); do
-            printf ' '
+            if (( j > i )); then
+                printf ' '
+            fi
         done
-        printf '] (%d%%)' "$filled"
-        sleep 0.03
+        printf '%s] %3d%%%s' "$BLUE" "$filled" "$RESET"
+        sleep 0.025
     done
-    printf '\n'
+    printf '\n\n'
 
     # Quick dependency verification check
     if ! gem list -i tty-prompt > /dev/null 2>&1; then
-        printf "\e[33m📦 'tty-prompt' gem missing. Installing...\e[0m\n"
+        printf '%s[setup]%s tty-prompt gem missing. Installing...\n' "$BLUE" "$RESET"
         gem install tty-prompt --no-document
     fi
 
-    printf "\e[1;32m%s\e[0m\n" "✓ All dependencies verified."
-    printf "\e[1mVersion: %s\e[0m\n" "$VER"
-    sleep 0.5
+    printf '%s[ready]%s Dependencies verified.\n' "$GREEN" "$RESET"
+    sleep 0.4
     clear
     main
 }
