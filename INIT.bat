@@ -10,27 +10,33 @@ color 0B
 echo Initialising Miniterm Revamped %VER%
 echo.
 <nul set /p "=["
-powershell -NoProfile -Command "1..30 | ForEach-Object { Write-Host -NoNewline '='; Start-Sleep -Milliseconds 25 }"
+for /L %%I in (1,1,30) do <nul set /p "=#"
 echo ] Done
 echo.
 
+echo [check] Looking for Ruby...
 where ruby >nul 2>&1
 if errorlevel 1 (
     echo Ruby was not found. Install Ruby and ensure it is on your PATH.
     goto :error
 )
 
+echo [check] Looking for RubyGems...
 where gem >nul 2>&1
 if errorlevel 1 (
     echo RubyGems was not found. Reinstall Ruby with RubyGems enabled.
     goto :error
 )
 
+echo [check] Checking tty-prompt...
 gem list -i tty-prompt >nul 2>&1
 if errorlevel 1 (
     echo Installing the tty-prompt gem...
     gem install tty-prompt --no-document
-    if errorlevel 1 goto :error
+    if errorlevel 1 (
+        echo Failed to install tty-prompt. Check your internet connection and RubyGems setup.
+        goto :error
+    )
 )
 
 echo [ready] Dependencies verified.
