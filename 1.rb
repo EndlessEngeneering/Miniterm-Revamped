@@ -2,16 +2,13 @@
 require 'tty-prompt'
 require 'rbconfig'
 
-terminal_input, terminal_output =
-  if RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/i
-    ['CONIN$', 'CONOUT$']
-  else
-    ['/dev/tty', '/dev/tty']
-  end
+windows = RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/i
+terminal_input = windows ? $stdin : File.open('/dev/tty', 'r')
+terminal_output = windows ? $stdout : File.open('/dev/tty', 'w')
 
 prompt = TTY::Prompt.new(
-  input: File.open(terminal_input, 'r'),
-  output: File.open(terminal_output, 'w'),
+  input: terminal_input,
+  output: terminal_output,
   active_color: :cyan,
   symbols: { marker: '❯' }
 )
@@ -35,4 +32,8 @@ else
   selected = prompt.select('MAIN MENU  ·  Choose an action', choices, cycle: true)
 end
 
-puts selected
+if ENV['MENU_RESULT_FILE']
+  File.write(ENV.fetch('MENU_RESULT_FILE'), selected.to_s)
+else
+  puts selected
+end

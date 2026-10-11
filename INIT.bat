@@ -52,11 +52,17 @@ timeout /t 1 /nobreak >nul
 cls
 call :banner
 set "MENU_FILE=%TEMP%\miniterm-menu-%RANDOM%-%RANDOM%.tmp"
+set "MENU_RESULT_FILE=%MENU_FILE%"
 set "ACTION="
-ruby "%SCRIPT_DIR%1.rb" > "%MENU_FILE%"
+del /q "%MENU_FILE%" >nul 2>&1
+ruby "%SCRIPT_DIR%1.rb"
 if errorlevel 1 (
     del /q "%MENU_FILE%" >nul 2>&1
     echo The menu could not be started. Check that tty-prompt is installed.
+    goto :error
+)
+if not exist "%MENU_FILE%" (
+    echo The menu did not return an action.
     goto :error
 )
 set /p "ACTION="<"%MENU_FILE%"
