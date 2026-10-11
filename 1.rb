@@ -1,9 +1,17 @@
 #!/usr/bin/env ruby
 require 'tty-prompt'
+require 'rbconfig'
+
+terminal_input, terminal_output =
+  if RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/i
+    ['CONIN$', 'CONOUT$']
+  else
+    ['/dev/tty', '/dev/tty']
+  end
 
 prompt = TTY::Prompt.new(
-  input: File.open('/dev/tty', 'r'),
-  output: File.open('/dev/tty', 'w'),
+  input: File.open(terminal_input, 'r'),
+  output: File.open(terminal_output, 'w'),
   active_color: :cyan,
   symbols: { marker: '❯' }
 )
